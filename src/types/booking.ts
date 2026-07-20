@@ -36,7 +36,18 @@ export interface AddOn {
 
 export type ServiceMode = 'in_shop' | 'doorstep';
 
-export type BookingStatus = 'pending' | 'confirmed' | 'in_progress' | 'ready' | 'completed' | 'cancelled';
+export type BookingStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'received'
+  | 'washing'
+  | 'cleaning'
+  | 'drying'
+  | 'inspection'
+  | 'ready'
+  | 'completed'
+  | 'cancelled'
+  | 'in_progress';
 
 export type PaymentMethod = 'card' | 'cash' | 'apple_pay' | 'google_pay';
 

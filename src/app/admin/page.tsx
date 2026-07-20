@@ -102,14 +102,14 @@ const INITIAL_GALLERY: CustomGalleryItem[] = [
 ];
 
 const SERVICE_STATUS_OPTIONS = [
-  'Booking Confirmed',
-  'Vehicle Received',
-  'Washing',
-  'Interior Cleaning',
-  'Drying',
-  'Quality Inspection',
-  'Ready for Pickup',
-  'Delivered',
+  { label: 'Booking Confirmed', value: 'confirmed' },
+  { label: 'Vehicle Received', value: 'received' },
+  { label: 'Washing', value: 'washing' },
+  { label: 'Interior Cleaning', value: 'cleaning' },
+  { label: 'Drying', value: 'drying' },
+  { label: 'Quality Inspection', value: 'inspection' },
+  { label: 'Ready for Pickup', value: 'ready' },
+  { label: 'Delivered', value: 'completed' },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -423,28 +423,43 @@ export default function AdminPage() {
                         </td>
                         <td className="py-4 px-4">
                           <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border ${
-                            b.status === 'confirmed'
-                              ? 'bg-blue-50 text-[#1E40AF] border-blue-200'
+                            b.status === 'pending'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
                               : b.status === 'cancelled'
                               ? 'bg-rose-50 text-rose-700 border-rose-200'
-                              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : b.status === 'ready' || b.status === 'completed'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : 'bg-blue-50 text-[#1E40AF] border-blue-200'
                           }`}>
                             {b.status}
                           </span>
                         </td>
                         <td className="py-4 px-4 text-right space-x-2">
-                          <button
-                            onClick={() => handleAcceptBooking(b.id)}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-colors"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => handleRejectBooking(b.id)}
-                            className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] transition-colors"
-                          >
-                            Reject
-                          </button>
+                          {b.status === 'pending' ? (
+                            <>
+                              <button
+                                onClick={() => handleAcceptBooking(b.id)}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-colors shadow-xs"
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() => handleRejectBooking(b.id)}
+                                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] transition-colors shadow-xs"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          ) : b.status === 'cancelled' ? (
+                            <span className="inline-block px-3 py-1 rounded-lg bg-rose-100 text-rose-800 font-bold text-[11px]">
+                              Rejected
+                            </span>
+                          ) : (
+                            <span className="inline-block px-3 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-[11px]">
+                              Accepted
+                            </span>
+                          )}
+
                           <button
                             onClick={() => setSelectedBookingModal(b)}
                             className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] transition-colors"
@@ -466,48 +481,50 @@ export default function AdminPage() {
           <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xs">
             <div className="pb-4 border-b border-slate-100">
               <h2 className="text-xl font-extrabold text-slate-900">2. Service Status Management</h2>
-              <p className="text-xs text-slate-500">Update vehicle washing progress. Automatically synced with Customer Dashboard.</p>
+              <p className="text-xs text-slate-500">Update vehicle washing progress for accepted orders. Automatically synced with Customer Dashboard.</p>
             </div>
 
-            {bookings.length === 0 ? (
+            {bookings.filter((b) => b.status !== 'pending' && b.status !== 'cancelled').length === 0 ? (
               <div className="p-10 text-center rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                 <Wrench className="w-8 h-8 text-[#1E40AF] mx-auto" />
-                <h3 className="font-bold text-slate-900 text-sm">No Vehicles in Service</h3>
-                <p className="text-xs text-slate-500">Active bookings will appear here to update status live.</p>
+                <h3 className="font-bold text-slate-900 text-sm">No Accepted Vehicles in Service</h3>
+                <p className="text-xs text-slate-500">Accept incoming customer bookings under &quot;1. Booking Management&quot; to update their live service status.</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {bookings.map((b) => (
-                  <div
-                    key={b.id}
-                    className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono font-bold text-[#1E40AF] text-xs">{b.referenceCode}</span>
-                        <h3 className="font-extrabold text-slate-900 text-base">{b.vehicle.make} {b.vehicle.model} ({b.vehicle.plateNumber})</h3>
+                {bookings
+                  .filter((b) => b.status !== 'pending' && b.status !== 'cancelled')
+                  .map((b) => (
+                    <div
+                      key={b.id}
+                      className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono font-bold text-[#1E40AF] text-xs">{b.referenceCode}</span>
+                          <h3 className="font-extrabold text-slate-900 text-base">{b.vehicle.make} {b.vehicle.model} ({b.vehicle.plateNumber})</h3>
+                        </div>
+                        <p className="text-xs text-slate-600">
+                          Customer: <span className="font-bold">{b.user.name}</span> • Service: <span className="font-bold text-[#1E40AF]">{b.packageName}</span>
+                        </p>
                       </div>
-                      <p className="text-xs text-slate-600">
-                        Customer: <span className="font-bold">{b.user.name}</span> • Service: <span className="font-bold text-[#1E40AF]">{b.packageName}</span>
-                      </p>
-                    </div>
 
-                    <div className="flex items-center space-x-3 w-full md:w-auto">
-                      <label className="text-xs font-bold text-slate-700 whitespace-nowrap">Current Status:</label>
-                      <select
-                        value={b.status}
-                        onChange={(e) => updateBookingStatus(b.id, e.target.value as any)}
-                        className="w-full md:w-64 px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-extrabold text-slate-900 focus:border-[#1E40AF] focus:outline-none"
-                      >
-                        {SERVICE_STATUS_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex items-center space-x-3 w-full md:w-auto">
+                        <label className="text-xs font-bold text-slate-700 whitespace-nowrap">Current Status:</label>
+                        <select
+                          value={b.status}
+                          onChange={(e) => updateBookingStatus(b.id, e.target.value as any)}
+                          className="w-full md:w-64 px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-extrabold text-slate-900 focus:border-[#1E40AF] focus:outline-none"
+                        >
+                          {SERVICE_STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>

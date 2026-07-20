@@ -30,10 +30,10 @@ export default function MyProfilePage() {
     login(nameInput.trim(), `${nameInput.trim().toLowerCase().replace(/\s+/g, '')}@pypirates.com`, phoneInput.trim());
   };
 
-  // Find active booking (in_progress, confirmed, ready)
+  // Find active booking (not cancelled)
   const activeBooking = bookings.find((b) =>
-    ['confirmed', 'in_progress', 'ready', 'pending'].includes(b.status)
-  );
+    ['pending', 'confirmed', 'received', 'washing', 'cleaning', 'drying', 'inspection', 'ready'].includes(b.status)
+  ) || (bookings.length > 0 && bookings[0].status !== 'cancelled' ? bookings[0] : undefined);
 
   // Timeline steps definition
   const timelineSteps = [
@@ -48,12 +48,20 @@ export default function MyProfilePage() {
   // Calculate timeline index based on status
   const getTimelineIndex = (status?: string) => {
     switch (status) {
+      case 'pending':
+        return 0;
       case 'confirmed':
         return 1;
-      case 'in_progress':
+      case 'received':
+        return 2;
+      case 'washing':
         return 3;
-      case 'ready':
+      case 'cleaning':
+      case 'drying':
+        return 4;
+      case 'inspection':
         return 5;
+      case 'ready':
       case 'completed':
         return 6;
       default:
@@ -62,6 +70,133 @@ export default function MyProfilePage() {
   };
 
   const currentTimelineIndex = activeBooking ? getTimelineIndex(activeBooking.status) : 0;
+
+  const getStatusLabel = (status?: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Pending Admin Approval';
+      case 'confirmed':
+        return 'Booking Confirmed';
+      case 'received':
+        return 'Vehicle Received';
+      case 'washing':
+        return 'Washing in Progress';
+      case 'cleaning':
+        return 'Interior Deep Cleaning';
+      case 'drying':
+        return 'Drying & Polishing';
+      case 'inspection':
+        return 'Quality Inspection';
+      case 'ready':
+        return 'Ready for Pickup';
+      case 'completed':
+        return 'Delivered';
+      case 'cancelled':
+        return 'Booking Rejected';
+      default:
+        return 'Active Order';
+    }
+  };
+
+  const getNotificationMsg = (b?: any) => {
+    if (!b) return 'No active alerts. Schedule your next car wash detailing service anytime.';
+    switch (b.status) {
+      case 'pending':
+        return `Order ${b.referenceCode} has been submitted. Waiting for Admin acceptance.`;
+      case 'confirmed':
+        return `Order ${b.referenceCode} accepted by Admin! Bring your vehicle or await valet pickup.`;
+      case 'received':
+        return `Vehicle received at PYPIRATES detailing bay for ${b.packageName}.`;
+      case 'washing':
+        return `High-pressure pH-neutral foam wash in progress for ${b.referenceCode}.`;
+      case 'cleaning':
+      case 'drying':
+        return `Cabin vacuuming, steam sanitization & microfiber drying underway.`;
+      case 'inspection':
+        return `Gloss inspection & final quality audit in progress for ${b.referenceCode}.`;
+      case 'ready':
+        return `Your vehicle is 100% detailed and ready for pickup!`;
+      case 'completed':
+        return `Order ${b.referenceCode} completed and delivered. Thank you for choosing PYPIRATES!`;
+      default:
+        return `Tracking order ${b.referenceCode} live.`;
+    }
+  };
+
+  // Stage-based Estimated Completion Calculations
+  const getEstimatedCompletionDetails = (status?: string, dateStr?: string, timeSlotStr?: string) => {
+    const defaultDate = dateStr || '20 July 2026';
+    const expectedPickupTime = '3:30 PM';
+
+    switch (status) {
+      case 'confirmed':
+        return {
+          progressPercent: 15,
+          remainingTime: '3 Hours remaining',
+          completionDate: defaultDate,
+          completionTime: expectedPickupTime,
+          isReady: false,
+        };
+      case 'received':
+        return {
+          progressPercent: 35,
+          remainingTime: '2 Hours 30 Minutes remaining',
+          completionDate: defaultDate,
+          completionTime: expectedPickupTime,
+          isReady: false,
+        };
+      case 'washing':
+        return {
+          progressPercent: 55,
+          remainingTime: '2 Hours remaining',
+          completionDate: defaultDate,
+          completionTime: expectedPickupTime,
+          isReady: false,
+        };
+      case 'cleaning':
+        return {
+          progressPercent: 70,
+          remainingTime: '1 Hour remaining',
+          completionDate: defaultDate,
+          completionTime: expectedPickupTime,
+          isReady: false,
+        };
+      case 'drying':
+        return {
+          progressPercent: 85,
+          remainingTime: '45 Minutes remaining',
+          completionDate: defaultDate,
+          completionTime: expectedPickupTime,
+          isReady: false,
+        };
+      case 'inspection':
+        return {
+          progressPercent: 95,
+          remainingTime: '20 Minutes remaining',
+          completionDate: defaultDate,
+          completionTime: expectedPickupTime,
+          isReady: false,
+        };
+      case 'ready':
+      case 'completed':
+        return {
+          progressPercent: 100,
+          remainingTime: '✅ Your vehicle is ready for pickup.',
+          completionDate: defaultDate,
+          completionTime: expectedPickupTime,
+          isReady: true,
+        };
+      case 'pending':
+      default:
+        return {
+          progressPercent: 5,
+          remainingTime: 'Awaiting Admin Acceptance',
+          completionDate: defaultDate,
+          completionTime: expectedPickupTime,
+          isReady: false,
+        };
+    }
+  };
 
   // 1. Render Name & Number Access Gate if NOT Authenticated
   if (!isAuthenticated) {
@@ -137,7 +272,7 @@ export default function MyProfilePage() {
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Customer Profile Banner (No Wash Perk Points Box) */}
+        {/* Customer Profile Banner */}
         <div className="rounded-3xl bg-white border border-slate-100 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#1E40AF] text-white font-black text-2xl flex items-center justify-center shadow-md overflow-hidden shrink-0 border-2 border-white">
@@ -174,12 +309,8 @@ export default function MyProfilePage() {
         <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-100 flex items-center space-x-3 text-xs text-slate-700">
           <Bell className="w-5 h-5 text-[#1E40AF] shrink-0 animate-bounce" />
           <div className="flex-1">
-            <span className="font-bold text-[#1E40AF]">Notifications: </span>
-            {activeBooking ? (
-              <span>Your order <strong>{activeBooking.referenceCode}</strong> is currently being serviced in Bay 1.</span>
-            ) : (
-              <span>No active alerts. Schedule your next car wash detailing service anytime.</span>
-            )}
+            <span className="font-bold text-[#1E40AF]">Live Alert: </span>
+            <span>{getNotificationMsg(activeBooking)}</span>
           </div>
         </div>
 
@@ -190,8 +321,14 @@ export default function MyProfilePage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-blue-50 text-[#1E40AF] border border-blue-100">
-                      Current Booking Status: {activeBooking.status.toUpperCase()}
+                    <span className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase border ${
+                      activeBooking.status === 'pending'
+                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                        : activeBooking.status === 'ready' || activeBooking.status === 'completed'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : 'bg-blue-50 text-[#1E40AF] border-blue-200'
+                    }`}>
+                      {getStatusLabel(activeBooking.status)}
                     </span>
                     <span className="font-mono font-bold text-slate-500 text-xs">Ref: {activeBooking.referenceCode}</span>
                   </div>
@@ -207,10 +344,10 @@ export default function MyProfilePage() {
                   </div>
                   <div className="h-8 w-[1px] bg-slate-200" />
                   <div className="text-center px-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block">Est. Completion Time</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">Est. Completion</span>
                     <span className="text-sm font-bold text-slate-900 flex items-center space-x-1">
                       <Clock className="w-3.5 h-3.5 text-[#1E40AF]" />
-                      <span>15 Mins</span>
+                      <span>{getEstimatedCompletionDetails(activeBooking.status).completionTime}</span>
                     </span>
                   </div>
                 </div>
@@ -253,6 +390,63 @@ export default function MyProfilePage() {
                   </div>
                 </div>
               </div>
+
+              {/* Estimated Completion Card (Directly Below Service Progress Timeline) */}
+              <div className="pt-6 border-t border-slate-100 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <h3 className="text-sm font-extrabold text-slate-900 flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-[#1E40AF]" />
+                    <span>Estimated Completion</span>
+                  </h3>
+                  <span className="text-xs font-black text-[#1E40AF]">
+                    Service Progress: {getEstimatedCompletionDetails(activeBooking.status, activeBooking.date, activeBooking.timeSlot).progressPercent}% Complete
+                  </span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden p-0.5 border border-slate-200">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-600 to-[#1E40AF] rounded-full transition-all duration-500 shadow-xs"
+                    style={{
+                      width: `${getEstimatedCompletionDetails(activeBooking.status, activeBooking.date, activeBooking.timeSlot).progressPercent}%`,
+                    }}
+                  />
+                </div>
+
+                {/* Estimated Completion Details Card */}
+                {(() => {
+                  const est = getEstimatedCompletionDetails(activeBooking.status, activeBooking.date, activeBooking.timeSlot);
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 rounded-2xl bg-blue-50/70 border border-blue-100">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xl">📅</span>
+                        <div>
+                          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Estimated Date</span>
+                          <span className="text-sm font-extrabold text-slate-900">{est.completionDate}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xl">🕒</span>
+                        <div>
+                          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Expected Pickup Time</span>
+                          <span className="text-sm font-extrabold text-slate-900">{est.completionTime}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xl">⏳</span>
+                        <div>
+                          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Remaining Time</span>
+                          <span className={`text-xs font-extrabold ${est.isReady ? 'text-emerald-700 font-black' : 'text-[#1E40AF]'}`}>
+                            {est.remainingTime}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             </>
           ) : (
             <div className="text-center py-8 space-y-3">
@@ -291,7 +485,7 @@ export default function MyProfilePage() {
               </span>
             </div>
 
-            {userProfile.vehicles.length === 0 ? (
+            {userProfile.vehicles.length === 0 && !activeBooking ? (
               <div className="p-6 text-center rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                 <Car className="w-8 h-8 text-slate-400 mx-auto" />
                 <p className="text-xs text-slate-600 font-semibold">No vehicle details saved yet.</p>
@@ -310,11 +504,11 @@ export default function MyProfilePage() {
                 <div>
                   <div className="flex items-center space-x-2">
                     <h4 className="font-extrabold text-slate-900 text-base">
-                      {userProfile.vehicles[0].year} {userProfile.vehicles[0].make} {userProfile.vehicles[0].model}
+                      {activeBooking ? activeBooking.vehicle.model : userProfile.vehicles[0]?.model} ({activeBooking ? activeBooking.vehicle.type : userProfile.vehicles[0]?.type})
                     </h4>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    Plate: <span className="font-mono text-slate-800 font-bold">{userProfile.vehicles[0].plateNumber}</span>
+                    Plate: <span className="font-mono text-slate-800 font-bold">{activeBooking ? activeBooking.vehicle.plateNumber : userProfile.vehicles[0]?.plateNumber}</span>
                   </p>
                 </div>
               </div>

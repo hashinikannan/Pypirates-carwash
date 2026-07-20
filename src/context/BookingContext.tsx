@@ -37,9 +37,9 @@ interface BookingContextType {
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_BOOKINGS_KEY = 'pypirates_carwash_bookings_v5';
-const LOCAL_STORAGE_USER_KEY = 'pypirates_carwash_user_v5';
-const LOCAL_STORAGE_AUTH_KEY = 'pypirates_carwash_auth_v5';
+const LOCAL_STORAGE_BOOKINGS_KEY = 'pypirates_carwash_bookings_v7';
+const LOCAL_STORAGE_USER_KEY = 'pypirates_carwash_user_v7';
+const LOCAL_STORAGE_AUTH_KEY = 'pypirates_carwash_auth_v7';
 
 export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [bookings, setBookings] = useState<Booking[]>(INITIAL_BOOKINGS);
@@ -121,7 +121,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       id: `bk-${Date.now()}`,
       referenceCode: `PYP-${randomNum}`,
       createdAt: new Date().toISOString(),
-      status: 'confirmed',
+      status: 'pending',
       technicianName: 'Assigned Wash Specialist',
     };
 

@@ -6,6 +6,7 @@ import { TestimonialsSection } from '../components/TestimonialsSection';
 import { PricingSection } from '../components/PricingSection';
 
 export default function HomePage() {
+  // Git test
   return (
     <div className="space-y-0 bg-[#F8FAFC]">
       <Hero />
